@@ -1,0 +1,31 @@
+kind = "web"
+previewPath = "/"
+title = "LessonLoop"
+version = "1.0.0"
+id = "artifacts/lessonloop"
+router = "path"
+
+[[integratedSkills]]
+name = "react-vite"
+version = "1.0.0"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 20942
+
+[services.development]
+run = "pnpm --filter @workspace/lessonloop run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/lessonloop", "run", "build" ]
+publicDir = "artifacts/lessonloop/dist/public"
+serve = "static"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "20942"
+BASE_PATH = "/"

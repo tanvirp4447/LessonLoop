@@ -3,20 +3,27 @@ info:
   # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: LessonLoop API specification
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: auth
+    description: Authentication operations
+  - name: lessons
+    description: Lesson plan operations
+  - name: templates
+    description: Template operations
+  - name: dashboard
+    description: Dashboard summary operations
 paths:
   /healthz:
     get:
       operationId: healthCheck
       tags: [health]
       summary: Health check
-      description: Returns server health status
       responses:
         "200":
           description: Healthy
@@ -24,6 +31,315 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  /auth/register:
+    post:
+      operationId: register
+      tags: [auth]
+      summary: Register a new user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RegisterBody"
+      responses:
+        "201":
+          description: User created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /auth/login:
+    post:
+      operationId: login
+      tags: [auth]
+      summary: Login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginBody"
+      responses:
+        "200":
+          description: Logged in
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+        "401":
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /auth/logout:
+    post:
+      operationId: logout
+      tags: [auth]
+      summary: Logout
+      responses:
+        "200":
+          description: Logged out
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+
+  /auth/me:
+    get:
+      operationId: getMe
+      tags: [auth]
+      summary: Get current user
+      responses:
+        "200":
+          description: Current user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "401":
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /lessons:
+    get:
+      operationId: listLessons
+      tags: [lessons]
+      summary: List all lesson plans
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [draft, complete, archived]
+        - name: subject
+          in: query
+          schema:
+            type: string
+        - name: search
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: List of lessons
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/LessonSummary"
+    post:
+      operationId: createLesson
+      tags: [lessons]
+      summary: Create a new lesson plan
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateLessonBody"
+      responses:
+        "201":
+          description: Lesson created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Lesson"
+
+  /lessons/{id}:
+    get:
+      operationId: getLesson
+      tags: [lessons]
+      summary: Get a lesson plan by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Lesson found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Lesson"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    put:
+      operationId: updateLesson
+      tags: [lessons]
+      summary: Update a lesson plan
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateLessonBody"
+      responses:
+        "200":
+          description: Lesson updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Lesson"
+    delete:
+      operationId: deleteLesson
+      tags: [lessons]
+      summary: Delete a lesson plan
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+
+  /lessons/{id}/duplicate:
+    post:
+      operationId: duplicateLesson
+      tags: [lessons]
+      summary: Duplicate a lesson plan
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "201":
+          description: Duplicated lesson
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Lesson"
+
+  /lessons/{id}/archive:
+    post:
+      operationId: archiveLesson
+      tags: [lessons]
+      summary: Archive or unarchive a lesson
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Archive status updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Lesson"
+
+  /templates:
+    get:
+      operationId: listTemplates
+      tags: [templates]
+      summary: List all templates
+      responses:
+        "200":
+          description: List of templates
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Template"
+
+  /templates/{id}/use:
+    post:
+      operationId: useTemplate
+      tags: [templates]
+      summary: Create a lesson from a template
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "201":
+          description: Lesson created from template
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Lesson"
+
+  /dashboard/summary:
+    get:
+      operationId: getDashboardSummary
+      tags: [dashboard]
+      summary: Get dashboard summary stats
+      responses:
+        "200":
+          description: Dashboard stats
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardSummary"
+
+  /dashboard/recent:
+    get:
+      operationId: getRecentLessons
+      tags: [dashboard]
+      summary: Get recently modified lessons
+      responses:
+        "200":
+          description: Recent lessons
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/LessonSummary"
+
+  /dashboard/by-subject:
+    get:
+      operationId: getLessonsBySubject
+      tags: [dashboard]
+      summary: Get lesson count grouped by subject
+      responses:
+        "200":
+          description: Lessons by subject
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/SubjectCount"
+
 components:
   schemas:
     HealthStatus:
@@ -34,3 +350,283 @@ components:
       required:
         - status
 
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+      required:
+        - error
+
+    MessageResponse:
+      type: object
+      properties:
+        message:
+          type: string
+      required:
+        - message
+
+    User:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        email:
+          type: string
+        createdAt:
+          type: string
+      required:
+        - id
+        - name
+        - email
+        - createdAt
+
+    RegisterBody:
+      type: object
+      properties:
+        name:
+          type: string
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          minLength: 8
+      required:
+        - name
+        - email
+        - password
+
+    LoginBody:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+      required:
+        - email
+        - password
+
+    AuthResponse:
+      type: object
+      properties:
+        user:
+          $ref: "#/components/schemas/User"
+        message:
+          type: string
+      required:
+        - user
+        - message
+
+    LessonSummary:
+      type: object
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        subject:
+          type: string
+        gradeLevel:
+          type: string
+        duration:
+          type: integer
+        status:
+          type: string
+          enum: [draft, complete, archived]
+        updatedAt:
+          type: string
+        createdAt:
+          type: string
+      required:
+        - id
+        - title
+        - subject
+        - gradeLevel
+        - duration
+        - status
+        - updatedAt
+        - createdAt
+
+    Lesson:
+      type: object
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        subject:
+          type: string
+        gradeLevel:
+          type: string
+        duration:
+          type: integer
+        status:
+          type: string
+          enum: [draft, complete, archived]
+        learningObjectives:
+          type: string
+        materials:
+          type: string
+        lessonSequence:
+          type: string
+        assessment:
+          type: string
+        curriculumOutcomes:
+          type: string
+        differentiationSupports:
+          type: string
+        differentiationExtensions:
+          type: string
+        differentiationAccommodations:
+          type: string
+        engagementStrategies:
+          type: string
+        reflectionNotes:
+          type: string
+        updatedAt:
+          type: string
+        createdAt:
+          type: string
+      required:
+        - id
+        - title
+        - subject
+        - gradeLevel
+        - duration
+        - status
+        - updatedAt
+        - createdAt
+
+    CreateLessonBody:
+      type: object
+      properties:
+        title:
+          type: string
+        subject:
+          type: string
+        gradeLevel:
+          type: string
+        duration:
+          type: integer
+        status:
+          type: string
+          enum: [draft, complete, archived]
+        learningObjectives:
+          type: string
+        materials:
+          type: string
+        lessonSequence:
+          type: string
+        assessment:
+          type: string
+        curriculumOutcomes:
+          type: string
+        differentiationSupports:
+          type: string
+        differentiationExtensions:
+          type: string
+        differentiationAccommodations:
+          type: string
+        engagementStrategies:
+          type: string
+        reflectionNotes:
+          type: string
+      required:
+        - title
+        - subject
+        - gradeLevel
+        - duration
+
+    UpdateLessonBody:
+      type: object
+      properties:
+        title:
+          type: string
+        subject:
+          type: string
+        gradeLevel:
+          type: string
+        duration:
+          type: integer
+        status:
+          type: string
+          enum: [draft, complete, archived]
+        learningObjectives:
+          type: string
+        materials:
+          type: string
+        lessonSequence:
+          type: string
+        assessment:
+          type: string
+        curriculumOutcomes:
+          type: string
+        differentiationSupports:
+          type: string
+        differentiationExtensions:
+          type: string
+        differentiationAccommodations:
+          type: string
+        engagementStrategies:
+          type: string
+        reflectionNotes:
+          type: string
+
+    Template:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        description:
+          type: string
+        subject:
+          type: string
+        gradeLevel:
+          type: string
+        isBuiltIn:
+          type: boolean
+      required:
+        - id
+        - name
+        - description
+        - subject
+        - gradeLevel
+        - isBuiltIn
+
+    DashboardSummary:
+      type: object
+      properties:
+        totalLessons:
+          type: integer
+        drafts:
+          type: integer
+        complete:
+          type: integer
+        archived:
+          type: integer
+        templatesAvailable:
+          type: integer
+      required:
+        - totalLessons
+        - drafts
+        - complete
+        - archived
+        - templatesAvailable
+
+    SubjectCount:
+      type: object
+      properties:
+        subject:
+          type: string
+        count:
+          type: integer
+      required:
+        - subject
+        - count
