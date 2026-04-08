@@ -1,4 +1,4 @@
-import { useEffect, useCallback, useState } from "react";
+import { useEffect, useCallback, useState, useRef } from "react";
 import Layout from "@/components/layout";
 import { useLocation } from "wouter";
 import { useForm } from "react-hook-form";
@@ -69,6 +69,8 @@ export default function LessonEditorPage({ id }: LessonEditorProps) {
   const { toast } = useToast();
   const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved">("idle");
   const [lessonId, setLessonId] = useState<number | undefined>(id);
+  const isInitializedRef = useRef(false);
+  const doSaveRef = useRef<((data: LessonFormData) => void) | null>(null);
 
   const { data: lesson, isLoading } = useGetLesson(lessonId!, {
     query: {
@@ -99,7 +101,8 @@ export default function LessonEditorPage({ id }: LessonEditorProps) {
   });
 
   useEffect(() => {
-    if (lesson) {
+    if (lesson && !isInitializedRef.current) {
+      isInitializedRef.current = true;
       form.reset({
         title: lesson.title,
         subject: lesson.subject,
@@ -142,9 +145,6 @@ export default function LessonEditorPage({ id }: LessonEditorProps) {
   const updateLesson = useUpdateLesson({
     mutation: {
       onSuccess: () => {
-        if (lessonId) {
-          queryClient.invalidateQueries({ queryKey: getGetLessonQueryKey(lessonId) });
-        }
         invalidateAll();
         setSaveStatus("saved");
         setTimeout(() => setSaveStatus("idle"), 2000);
@@ -165,18 +165,20 @@ export default function LessonEditorPage({ id }: LessonEditorProps) {
     [lessonId, updateLesson, createLesson]
   );
 
+  doSaveRef.current = doSave;
+
   useEffect(() => {
     const subscription = form.watch((values) => {
       const timeout = setTimeout(() => {
         const parsed = lessonSchema.safeParse(values);
-        if (parsed.success) {
-          doSave(parsed.data);
+        if (parsed.success && doSaveRef.current) {
+          doSaveRef.current(parsed.data);
         }
       }, 800);
       return () => clearTimeout(timeout);
     });
     return () => subscription.unsubscribe();
-  }, [form, doSave]);
+  }, [form]);
 
   function onSaveNow() {
     form.handleSubmit((data) => doSave(data))();
