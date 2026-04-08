@@ -27,7 +27,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { ChevronLeft, Eye, Save, Check, Loader2 } from "lucide-react";
+import { ChevronLeft, Eye, Save, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 const lessonSchema = z.object({
@@ -67,10 +67,8 @@ export default function LessonEditorPage({ id }: LessonEditorProps) {
   const [, setLocation] = useLocation();
   const queryClient = useQueryClient();
   const { toast } = useToast();
-  const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved">("idle");
   const [lessonId, setLessonId] = useState<number | undefined>(id);
   const isInitializedRef = useRef(false);
-  const doSaveRef = useRef<((data: LessonFormData) => void) | null>(null);
 
   const { data: lesson, isLoading } = useGetLesson(lessonId!, {
     query: {
@@ -135,8 +133,6 @@ export default function LessonEditorPage({ id }: LessonEditorProps) {
       onSuccess: (created) => {
         setLessonId(created.id);
         invalidateAll();
-        setSaveStatus("saved");
-        setTimeout(() => setSaveStatus("idle"), 2000);
         setLocation(`/lessons/${created.id}`);
       },
     },
@@ -146,8 +142,7 @@ export default function LessonEditorPage({ id }: LessonEditorProps) {
     mutation: {
       onSuccess: () => {
         invalidateAll();
-        setSaveStatus("saved");
-        setTimeout(() => setSaveStatus("idle"), 2000);
+        toast({ title: "Lesson saved" });
       },
     },
   });
@@ -155,30 +150,13 @@ export default function LessonEditorPage({ id }: LessonEditorProps) {
   const doSave = useCallback(
     (data: LessonFormData) => {
       if (lessonId) {
-        setSaveStatus("saving");
         updateLesson.mutate({ id: lessonId, data });
       } else {
-        setSaveStatus("saving");
         createLesson.mutate({ data });
       }
     },
     [lessonId, updateLesson, createLesson]
   );
-
-  doSaveRef.current = doSave;
-
-  useEffect(() => {
-    const subscription = form.watch((values) => {
-      const timeout = setTimeout(() => {
-        const parsed = lessonSchema.safeParse(values);
-        if (parsed.success && doSaveRef.current) {
-          doSaveRef.current(parsed.data);
-        }
-      }, 800);
-      return () => clearTimeout(timeout);
-    });
-    return () => subscription.unsubscribe();
-  }, [form]);
 
   function onSaveNow() {
     form.handleSubmit((data) => doSave(data))();
@@ -218,16 +196,6 @@ export default function LessonEditorPage({ id }: LessonEditorProps) {
               <h1 className="text-xl font-bold text-foreground tracking-tight">
                 {lessonId ? "Edit Lesson" : "New Lesson"}
               </h1>
-              {saveStatus === "saving" && (
-                <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
-                  <Loader2 className="w-3 h-3 animate-spin" /> Saving...
-                </p>
-              )}
-              {saveStatus === "saved" && (
-                <p className="text-xs text-green-600 flex items-center gap-1 mt-0.5">
-                  <Check className="w-3 h-3" /> Saved
-                </p>
-              )}
             </div>
           </div>
           <div className="flex items-center gap-2">
