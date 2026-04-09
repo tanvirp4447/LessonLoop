@@ -12,14 +12,14 @@ The first version of the platform is focused on a practical and stable core expe
 
 Features
 
-Structured lesson builder with guided planning sections
-Curriculum alignment support for outcomes or standards
-Built-in differentiation planning for supports, accommodations, and extensions
-Reusable templates for faster and more consistent lesson creation
-Clean, export-ready lesson formatting for PDF or DOCX
-Dashboard for viewing, searching, duplicating, archiving, or deleting lessons
-Responsive design optimized for laptop and tablet use
-Autosave and organized lesson storage for ongoing planning workflows
+- Structured lesson builder with guided planning sections
+- Curriculum alignment support for outcomes or standards
+- Built-in differentiation planning for supports, accommodations, and extensions
+- Reusable templates for faster and more consistent lesson creation
+- Clean, export-ready lesson formatting for PDF or DOCX
+- Dashboard for viewing, searching, duplicating, archiving, or deleting lessons
+- Responsive design optimized for laptop and tablet use
+- Autosave and organized lesson storage for ongoing planning workflows
 
 Current MVP Scope
 
